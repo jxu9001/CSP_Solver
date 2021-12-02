@@ -1,4 +1,5 @@
-# CSP_Solver
-CSP Solver that I wrote for CS 4365: Artificial Intelligence
+# CS 4365 Homework 2: CSP Solver
 
-I have included some sample input files. To run the solver, type "python3 main.py <var_file> <con_file> <fc_procedure>" into the command line.
+CSP Solver that solves constraint satisfaction problems with backtracking.
+
+I have included some sample inputs and outputs.
