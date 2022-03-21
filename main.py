@@ -3,17 +3,20 @@
 # I used the following command to run the solver:
 # python3 <filename> <path_to_var> <path_to_con> <con_procedure>
 
-import itertools
-import operator
-from copy import deepcopy
-import sys
 
-# dictionary that allows for conversion of "op" strings to actual operators
+from collections import defaultdict
+from copy import deepcopy
+from itertools import chain
+from sys import argv
+import operator
+
+
+# dictionary that allows for conversion of 'op' strings to actual operators
 operators = {
-    ">": operator.gt,
-    "<": operator.lt,
-    "=": operator.eq,
-    "!": operator.ne
+    '>': operator.gt,
+    '<': operator.lt,
+    '=': operator.eq,
+    '!': operator.ne
 }
 
 
@@ -47,12 +50,12 @@ def main():
     variables, constraints, assignment = {}, [], {}
 
     # command line args
-    var_file_name, con_file_name, fc_procedure = sys.argv[1], sys.argv[2], sys.argv[3]
+    var_file_name, con_file_name, fc_procedure = argv[1], argv[2], argv[3]
 
     # read .var file into a dictionary where key = variable's name and v = Variable object
     with open(var_file_name) as var_file:
         for line in var_file:
-            line = line.strip().replace(":", "").split()
+            line = line.strip().replace(':', '').split()
             # create a Variable object and add it to the variables dictionary
             variable = Variable()
             variable.set_domain([int(val) for val in line[1:]])
@@ -61,14 +64,10 @@ def main():
 
     # read .con file into a list of lists where each sublist is a constraint in the form ['v1', 'op', 'v2']
     with open(con_file_name) as con_file:
-        for line in con_file:
-            constraints.append(line.split())
+        constraints = [line.split() for line in con_file if line]
 
     # check which consistency enforcing procedure to use
-    if fc_procedure == "none":
-        forward_checking = False
-    else:
-        forward_checking = True
+    forward_checking = False if fc_procedure == 'none' else True
 
     result = backtracking(assignment, variables, constraints, forward_checking)
 
@@ -83,11 +82,7 @@ def backtracking(assignment, variables, constraints, forward_checking):
     """
     # assignment is a dictionary where k = variable's name and v = variable's value
     # check if assignment is complete
-    complete = True
-    for var in variables.values():
-        if var.get_value() is None:
-            complete = False
-    if complete:
+    if all(var.get_value() for var in variables.values()):
         return assignment
 
     # select variable and get its domain, ordered according to the LCV heuristic
@@ -186,7 +181,7 @@ def order_domain_values(variables, constraints, var):
     """
     # dictionary where k = num. legal values remaining in neighboring unassigned variables of var (int)
     # v = value(s) of var s.t. var has k values remaining (list)
-    constraining_values = {}
+    constraining_values = defaultdict(list)
     # check all possible values of the given var
     for val_1 in variables[var].get_domain():
         # initialize count of legal vals
@@ -209,12 +204,7 @@ def order_domain_values(variables, constraints, var):
                     if op(val_2, val_1):
                         num_legal_values += 1
 
-        # 2+ values of var w/ the same # of legal values in neighboring unassigned variables
-        if num_legal_values in constraining_values:
-            constraining_values[num_legal_values].append(val_1)
-        # only 1 value of var w/ the same # of legal values in neighboring unassigned variables
-        else:
-            constraining_values[num_legal_values] = [val_1]
+        constraining_values[num_legal_values].append(val_1)
 
     ordered_domain_values = []
 
@@ -224,7 +214,7 @@ def order_domain_values(variables, constraints, var):
         ordered_domain_values.append(constraining_values[key])
 
     # flatten the list of keys
-    return list(itertools.chain(*ordered_domain_values))
+    return list(chain(*ordered_domain_values))
 
 
 def run_forward_checking(variables, constraints, var):
@@ -272,19 +262,19 @@ def print_branch(assignment, var, val, forward_checking):
     global line_number
     count = 1
     line_number += 1
-    branch = str(line_number) + ". "
+    branch = str(line_number) + '. '
     for v in assignment:
         if forward_checking:
             # end of branch
             if count == len(assignment):
-                branch += var + "=" + str(val) + "  failure"
+                branch += var + '=' + str(val) + '  failure'
             else:
-                branch += v + "=" + str(assignment[v]) + ", "
+                branch += v + '=' + str(assignment[v]) + ', '
         else:
-            branch += v + "=" + str(assignment[v]) + ", "
+            branch += v + '=' + str(assignment[v]) + ', '
             # end of branch
             if count == len(assignment):
-                branch += var + "=" + str(val) + "  failure"
+                branch += var + '=' + str(val) + '  failure'
         count += 1
     print(branch)
 
@@ -296,16 +286,16 @@ def print_solution(assignment):
     global line_number
     count = 1
     line_number += 1
-    solution = str(line_number) + ". "
+    solution = str(line_number) + '. '
     for v in assignment:
         # end of solution
         if count == len(assignment):
-            solution += v + "=" + str(assignment[v]) + "  solution"
+            solution += v + '=' + str(assignment[v]) + '  solution'
         else:
-            solution += v + "=" + str(assignment[v]) + ", "
+            solution += v + '=' + str(assignment[v]) + ', '
         count += 1
     print(solution)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
